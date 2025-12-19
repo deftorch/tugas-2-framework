@@ -79,15 +79,29 @@ export default function EducationForm() {
                             />
                         </div>
 
-                        {/* Graduation Date */}
+                        {/* Start Date */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Graduation date
+                                Start Date
                             </label>
                             <input
-                                type="text"
-                                value={edu.graduationDate}
-                                onChange={(e) => handleChange(edu.id, 'graduationDate', e.target.value)}
+                                type="date"
+                                value={edu.startDate || ''}
+                                onChange={(e) => handleChange(edu.id, 'startDate', e.target.value)}
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all"
+                                placeholder=""
+                            />
+                        </div>
+
+                        {/* End Date */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                End Date
+                            </label>
+                            <input
+                                type="date"
+                                value={edu.endDate || ''}
+                                onChange={(e) => handleChange(edu.id, 'endDate', e.target.value)}
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all"
                                 placeholder=""
                             />

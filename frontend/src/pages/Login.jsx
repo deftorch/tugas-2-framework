@@ -21,9 +21,23 @@ export default function Login() {
       if (user.is_staff || user.is_superuser) {
         navigate("/admin/dashboard");
       } else {
-        navigate("/mahasiswa");
+        // Check if student profile exists
+        try {
+            const profileRes = await api.get("/api/students/me/");
+            // If profile exists, go to profile view
+            navigate(`/talent/${profileRes.data.id}`);
+        } catch (error) {
+            // If profile doesn't exist (404), go to create profile
+            if (error.response && error.response.status === 404) {
+                navigate("/mahasiswa");
+            } else {
+                console.error("Error fetching profile:", error);
+                alert("Terjadi kesalahan saat mengambil profil. Silakan coba lagi.");
+            }
+        }
       }
     } catch (error) {
+      console.error(error);
       alert("Login Gagal! Cek username/password.");
     }
   };

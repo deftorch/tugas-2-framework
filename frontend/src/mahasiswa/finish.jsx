@@ -3,6 +3,7 @@ import { useReactToPrint } from "react-to-print";
 import { useCV } from "./CVContext";
 import Preview from "./Preview";
 import api from "../api";
+import { useNavigate } from "react-router-dom";
 
 export default function FinishForm({ handleLogout }) {
   const { state, prevStep, setStep, updateContact } = useCV();
@@ -10,6 +11,7 @@ export default function FinishForm({ handleLogout }) {
   const previewRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
+  const navigate = useNavigate();
 
   const handlePrint = useReactToPrint({
     contentRef: previewRef,
@@ -37,6 +39,14 @@ export default function FinishForm({ handleLogout }) {
     updateContact({ [name]: value });
   };
 
+  const isTempId = (id) => {
+    // Temp IDs are usually large integers (Date.now()) or strings depending on implementation
+    // Backend IDs are integers starting from 1
+    // We can check if it's a number and relatively small, or if it was loaded from backend
+    // A safer way is if ID > 10000000000 it's likely a timestamp.
+    return !id || Number(id) > 10000000000;
+  };
+
   // Save biodata to backend
   const handleSaveBiodata = async () => {
     setIsSaving(true);
@@ -53,61 +63,141 @@ export default function FinishForm({ handleLogout }) {
       formData.append("bio", about.summary || "");
       if (contact.linkedin) formData.append("linkedin_link", contact.linkedin);
 
+      // Add new fields
+      if (contact.email) formData.append("email", contact.email);
+      if (contact.phone) formData.append("phone", contact.phone);
+      if (contact.city) formData.append("city", contact.city);
+      if (contact.nationality) formData.append("nationality", contact.nationality);
+      if (contact.visaStatus) formData.append("visa_status", contact.visaStatus);
+      if (contact.maritalStatus) formData.append("marital_status", contact.maritalStatus);
+
       if (contact.photoFile) {
         formData.append("photo", contact.photoFile);
       }
 
-      // Headers for multipart/form-data are automatically set by axios when sending FormData
-
       // Try to update existing profile first, if not exist create new
+      let profileId;
       try {
-        await api.patch("/api/students/me/", formData);
+        const res = await api.patch("/api/students/me/", formData);
+        profileId = res.data.id;
       } catch (err) {
         // If profile doesn't exist, create new one
         if (err.response && err.response.status === 404) {
-          await api.post("/api/students/", formData);
+          const res = await api.post("/api/students/", formData);
+          profileId = res.data.id;
         } else {
           throw err;
         }
       }
 
+      // Helper function to check equality of dates (handling null/undefined)
+      const isDateEqual = (d1, d2) => {
+          if (!d1 && !d2) return true;
+          return d1 === d2;
+      };
+
+      // Helper to check if data changed (simple shallow comparison for key fields)
+      // This helps avoid unnecessary PATCH requests
+      // Note: This is an optimization, not strictly necessary but good practice
+
       // Save skills
+      // Note: Skills API is simpler, name only.
+      // Logic:
+      // 1. New skills (temp ID) -> POST
+      // 2. Existing skills -> No update needed usually as name is the only field. If name changed, we could PATCH.
+      // Current skill editor only allows adding new or removing. Editing existing is... handled as update?
+      // In CVContext, updateSkill updates the state.
+      // If we change name of existing skill, we should PATCH.
+
       for (const skill of skills) {
-        if (skill.name) {
-          try {
-            await api.post("/api/skills/", { name: skill.name });
-          } catch (skillErr) {
-            // Skip if skill already exists
-            console.log("Skill may already exist:", skill.name);
-          }
+        if (!skill.name) continue;
+
+        if (isTempId(skill.id)) {
+            // New Skill -> POST
+             try {
+                await api.post("/api/skills/", { name: skill.name });
+            } catch (err) {
+                console.log("Error adding skill:", skill.name);
+            }
+        } else {
+            // Existing Skill -> PATCH
+            // We blindly PATCH to ensure it's up to date. Optimization: only if changed.
+             try {
+                await api.patch(`/api/skills/${skill.id}/`, { name: skill.name });
+            } catch (err) {
+                console.log("Error updating skill:", skill.name);
+            }
         }
       }
 
       // Save experiences
       for (const exp of experience) {
-        if (exp.employer && exp.jobTitle) {
-          try {
-            await api.post("/api/experiences/", {
+        if (!exp.employer || !exp.jobTitle) continue;
+
+        const expData = {
               title: exp.jobTitle,
               company: exp.employer,
-              start_date: exp.startDate || "2024-01-01",
-              end_date: exp.current ? null : exp.endDate || "2024-12-31",
+              start_date: exp.startDate || null,
+              end_date: exp.current ? null : (exp.endDate || null),
               description: exp.description || "",
-            });
-          } catch (expErr) {
-            console.log("Experience may already exist:", exp.jobTitle);
-          }
+        };
+
+        if (isTempId(exp.id)) {
+             try {
+                await api.post("/api/experiences/", expData);
+            } catch (err) {
+                console.log("Error adding experience:", exp.jobTitle);
+            }
+        } else {
+             try {
+                await api.patch(`/api/experiences/${exp.id}/`, expData);
+            } catch (err) {
+                console.log("Error updating experience:", exp.jobTitle);
+            }
+        }
+      }
+
+      // Save education
+      for (const edu of education) {
+        if (!edu.school || !edu.degree) continue;
+
+        const eduData = {
+              school: edu.school,
+              degree: edu.degree,
+              start_date: edu.startDate || null,
+              end_date: edu.endDate || null,
+              city: edu.city || "",
+              description: edu.description || "",
+        };
+
+        if (isTempId(edu.id)) {
+            try {
+                await api.post("/api/educations/", eduData);
+            } catch (err) {
+                console.log("Error adding education:", edu.school);
+            }
+        } else {
+             try {
+                await api.patch(`/api/educations/${edu.id}/`, eduData);
+            } catch (err) {
+                 console.log("Error updating education:", edu.school);
+            }
         }
       }
 
       setSaveStatus("success");
       alert(
-        "✅ Biodata berhasil disimpan! Data Anda akan muncul di halaman Talenta Terbaru."
+        "✅ Biodata berhasil disimpan! Anda akan diarahkan ke profil anda."
       );
+
+      // Redirect to profile page
+      if (profileId) {
+          navigate(`/talent/${profileId}`);
+      }
+
     } catch (error) {
       console.error("Error saving biodata:", error);
       setSaveStatus("error");
-      // UBAH BARIS DI BAWAH INI:
       const errorMsg = error.response?.data
         ? JSON.stringify(error.response.data)
         : "Gagal menyimpan biodata. Pastikan Anda sudah login.";

@@ -137,8 +137,9 @@ export default function ContactForm({ handleLogout }) {
                         value={contact.email}
                         onChange={handleChange}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all"
-                        placeholder=""
+                        placeholder="example@email.com"
                     />
+                    <p className="text-xs text-gray-400 mt-1">If empty, your login email will be used.</p>
                 </div>
 
                 {/* Phone */}
