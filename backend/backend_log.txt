@@ -1,0 +1,16 @@
+Watching for file changes with StatReloader
+[19/Dec/2025 06:34:11] "POST /auth/users/ HTTP/1.1" 201 73
+[19/Dec/2025 06:34:13] "POST /auth/jwt/create/ HTTP/1.1" 200 489
+[19/Dec/2025 06:34:13] "GET /api/users/me/ HTTP/1.1" 200 111
+Not Found: /api/students/me/
+[19/Dec/2025 06:34:13] "PATCH /api/students/me/ HTTP/1.1" 404 33
+[19/Dec/2025 06:34:13] "POST /api/students/ HTTP/1.1" 201 253
+[19/Dec/2025 06:34:13] "POST /api/skills/ HTTP/1.1" 201 44
+[19/Dec/2025 06:34:13] "GET /api/students/ HTTP/1.1" 200 299
+Bad Request: /auth/users/
+[19/Dec/2025 06:34:31] "POST /auth/users/ HTTP/1.1" 400 58
+[19/Dec/2025 06:34:32] "POST /auth/jwt/create/ HTTP/1.1" 200 489
+[19/Dec/2025 06:34:33] "GET /api/users/me/ HTTP/1.1" 200 111
+[19/Dec/2025 06:34:33] "PATCH /api/students/me/ HTTP/1.1" 200 297
+[19/Dec/2025 06:34:33] "POST /api/skills/ HTTP/1.1" 201 44
+[19/Dec/2025 06:34:33] "GET /api/students/ HTTP/1.1" 200 344

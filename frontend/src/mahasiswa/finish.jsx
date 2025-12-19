@@ -45,22 +45,27 @@ export default function FinishForm({ handleLogout }) {
     try {
       const fullName = `${contact.firstName} ${contact.lastName}`.trim();
 
-      // Save/update student profile
-      const profileData = {
-        full_name: fullName,
-        nim: about.nim || contact.nim || "",
-        prodi: about.prodi || contact.prodi || "Informatika",
-        bio: about.summary || "",
-        linkedin_link: contact.linkedin || "",
-      };
+      // Prepare FormData for profile (including photo)
+      const formData = new FormData();
+      formData.append("full_name", fullName);
+      formData.append("nim", about.nim || contact.nim || "");
+      formData.append("prodi", about.prodi || contact.prodi || "Informatika");
+      formData.append("bio", about.summary || "");
+      if (contact.linkedin) formData.append("linkedin_link", contact.linkedin);
+
+      if (contact.photoFile) {
+        formData.append("photo", contact.photoFile);
+      }
+
+      // Headers for multipart/form-data are automatically set by axios when sending FormData
 
       // Try to update existing profile first, if not exist create new
       try {
-        await api.patch("/api/students/me/", profileData);
+        await api.patch("/api/students/me/", formData);
       } catch (err) {
         // If profile doesn't exist, create new one
         if (err.response && err.response.status === 404) {
-          await api.post("/api/students/", profileData);
+          await api.post("/api/students/", formData);
         } else {
           throw err;
         }

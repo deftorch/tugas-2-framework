@@ -82,7 +82,7 @@ export default function Home() {
               Talenta Terbaru
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {students.slice(0, 3).map((student) => (
+              {students.slice(0, 5).map((student) => (
                 <StudentCard key={student.id} student={student} />
               ))}
             </div>

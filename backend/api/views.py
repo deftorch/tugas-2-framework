@@ -27,9 +27,9 @@ class StudentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         
         if self.request.user.is_staff or self.request.user.is_superuser:
-            return StudentProfile.objects.select_related('user').prefetch_related('skills', 'experiences').all()
+            return StudentProfile.objects.select_related('user').prefetch_related('skills', 'experiences').order_by('-id').all()
         
-        return StudentProfile.objects.filter(is_active=True).select_related('user').prefetch_related('skills', 'experiences')
+        return StudentProfile.objects.filter(is_active=True).select_related('user').prefetch_related('skills', 'experiences').order_by('-id')
 
     @action(detail=False, methods=['get', 'put', 'patch'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
