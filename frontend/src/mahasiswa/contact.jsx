@@ -9,6 +9,16 @@ export default function ContactForm({ handleLogout }) {
         updateContact({ [name]: value });
     };
 
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Create a preview URL for the UI
+            const previewUrl = URL.createObjectURL(file);
+            // Store file object for upload and preview URL for display
+            updateContact({ photo: previewUrl, photoFile: file });
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -17,8 +27,36 @@ export default function ContactForm({ handleLogout }) {
                     Please enter your <span className="text-[#2596be]">contact</span> info
                 </h1>
                 <p className="text-gray-500 mt-1 text-sm">
-                    Add your phone number and email so recruiters can reach you.
+                    Add your phone number, email, and photo so recruiters can reach you.
                 </p>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4">
+                <div className="w-24 h-24 rounded-full bg-gray-200 border-2 border-dashed border-gray-400 flex items-center justify-center overflow-hidden relative">
+                    {contact.photo ? (
+                        <img src={contact.photo} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-gray-400 text-xs text-center p-2">No Photo</span>
+                    )}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Profile Photo
+                    </label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Recommended: Square image, max 2MB.</p>
+                </div>
             </div>
 
             {/* Form Fields */}
