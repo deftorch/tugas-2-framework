@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react';
+import { createContext, useContext, useReducer, useEffect } from 'react';
+import api from '../api';
 
 // Initial state untuk semua data CV
 const initialState = {
@@ -28,6 +29,7 @@ const initialState = {
         viewSkillsAsTags: false,
         hideExperienceLevel: false,
     },
+    isLoading: false, // Added loading state
 };
 
 // Action types
@@ -46,6 +48,8 @@ const ACTIONS = {
     SET_STEP: 'SET_STEP',
     UPDATE_SETTINGS: 'UPDATE_SETTINGS',
     RESET_ALL: 'RESET_ALL',
+    SET_LOADING: 'SET_LOADING',
+    LOAD_DATA: 'LOAD_DATA',
 };
 
 // Reducer function
@@ -98,7 +102,9 @@ function cvReducer(state, action) {
                         id: Date.now(),
                         school: '',
                         degree: '',
-                        graduationDate: '',
+                        graduationDate: '', // Kept for compatibility if used elsewhere, but new form uses startDate/endDate
+                        startDate: '',
+                        endDate: '',
                         city: '',
                         description: '',
                     },
@@ -167,6 +173,12 @@ function cvReducer(state, action) {
         case ACTIONS.RESET_ALL:
             return initialState;
 
+        case ACTIONS.SET_LOADING:
+            return { ...state, isLoading: action.payload };
+
+        case ACTIONS.LOAD_DATA:
+            return { ...state, ...action.payload };
+
         default:
             return state;
     }
@@ -178,6 +190,91 @@ const CVContext = createContext(null);
 // Provider component
 export function CVProvider({ children }) {
     const [state, dispatch] = useReducer(cvReducer, initialState);
+
+    // Fetch existing profile data on mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            dispatch({ type: ACTIONS.SET_LOADING, payload: true });
+            try {
+                // Fetch profile data
+                const res = await api.get('/api/students/me/');
+                const data = res.data;
+
+                // Map API data to state
+                const loadedData = {
+                    contact: {
+                        firstName: data.full_name ? data.full_name.split(' ')[0] : '',
+                        lastName: data.full_name ? data.full_name.split(' ').slice(1).join(' ') : '',
+                        city: data.city || '',
+                        postalCode: '', // Not in backend yet
+                        email: data.email || data.login_email || '',
+                        phone: data.phone || '',
+                        photo: data.photo || null, // Backend URL
+                        nationality: data.nationality || '',
+                        visaStatus: data.visa_status || '',
+                        maritalStatus: data.marital_status || '',
+                        linkedin: data.linkedin_link || '',
+                        nim: data.nim || '',
+                        prodi: data.prodi || '',
+                    },
+                    experience: data.experiences.map(exp => ({
+                        id: exp.id,
+                        employer: exp.company,
+                        jobTitle: exp.title,
+                        city: '', // Not in Experience model yet, maybe add later?
+                        startDate: exp.start_date,
+                        endDate: exp.end_date,
+                        description: exp.description,
+                        current: !exp.end_date
+                    })),
+                    education: data.educations.map(edu => ({
+                        id: edu.id,
+                        school: edu.school,
+                        degree: edu.degree,
+                        city: edu.city || '',
+                        startDate: edu.start_date,
+                        endDate: edu.end_date,
+                        description: edu.description
+                    })),
+                    skills: data.skills.map(skill => ({
+                        id: skill.id,
+                        name: skill.name,
+                        level: 'skillful' // Default
+                    })),
+                    about: {
+                        summary: data.bio || '',
+                        nim: data.nim || '',
+                        prodi: data.prodi || '',
+                    }
+                };
+
+                dispatch({ type: ACTIONS.LOAD_DATA, payload: loadedData });
+
+            } catch (error) {
+                console.log('No existing profile or error fetching:', error);
+                // If 404, we just start with empty state (which is default)
+                // If authenticated, we might want to pre-fill email from /users/me
+                 if (error.response && error.response.status === 404) {
+                     try {
+                         const userRes = await api.get('/api/users/me/');
+                         dispatch({
+                             type: ACTIONS.UPDATE_CONTACT,
+                             payload: { email: userRes.data.email }
+                         });
+                     } catch (e) {
+                         console.error("Error fetching user info", e);
+                     }
+                 }
+            } finally {
+                dispatch({ type: ACTIONS.SET_LOADING, payload: false });
+            }
+        };
+
+        // Check if user is logged in before fetching
+        if (localStorage.getItem('access_token')) {
+            fetchProfile();
+        }
+    }, []);
 
     // Action creators
     const actions = {

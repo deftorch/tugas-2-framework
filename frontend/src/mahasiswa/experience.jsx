@@ -117,8 +117,8 @@ export default function ExperienceForm() {
                                 Start Date
                             </label>
                             <input
-                                type="text"
-                                value={exp.startDate}
+                                type="date"
+                                value={exp.startDate || ''}
                                 onChange={(e) => handleChange(exp.id, 'startDate', e.target.value)}
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all"
                                 placeholder=""
@@ -131,8 +131,8 @@ export default function ExperienceForm() {
                                 End Date
                             </label>
                             <input
-                                type="text"
-                                value={exp.endDate}
+                                type="date"
+                                value={exp.endDate || ''}
                                 onChange={(e) => handleChange(exp.id, 'endDate', e.target.value)}
                                 disabled={exp.current}
                                 className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all ${exp.current ? 'bg-gray-100 text-gray-400' : ''
@@ -205,7 +205,7 @@ export default function ExperienceForm() {
                     onClick={nextStep}
                     className="flex items-center gap-2 bg-[#2596be] hover:bg-[#1e7a9a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
                 >
-                    Next to Experience
+                    Next to Education
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5"

@@ -51,7 +51,7 @@ export default function SkillForm() {
                                 value={skill.name}
                                 onChange={(e) => handleChange(skill.id, 'name', e.target.value)}
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2596be] focus:border-[#2596be] outline-none transition-all"
-                                placeholder=""
+                                placeholder="Skill (e.g. Project Management)"
                             />
                         </div>
 
@@ -124,7 +124,7 @@ export default function SkillForm() {
                         clipRule="evenodd"
                     />
                 </svg>
-                Add Employment
+                Add Skill
             </button>
 
             {/* Dashed separator */}
@@ -188,7 +188,7 @@ export default function SkillForm() {
                     onClick={nextStep}
                     className="flex items-center gap-2 bg-[#2596be] hover:bg-[#1e7a9a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
                 >
-                    Next to Experience
+                    Next to Summary
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5"

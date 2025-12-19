@@ -2,8 +2,9 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from .models import StudentProfile, Skill, Experience
-from .serializers import StudentProfileSerializer, SkillSerializer, ExperienceSerializer
+from .models import StudentProfile, Skill, Experience, Education
+from .serializers import StudentProfileSerializer, SkillSerializer, ExperienceSerializer, EducationSerializer
+from django.db.models import Q
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -27,9 +28,19 @@ class StudentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         
         if self.request.user.is_staff or self.request.user.is_superuser:
-            return StudentProfile.objects.select_related('user').prefetch_related('skills', 'experiences').order_by('-id').all()
+            return StudentProfile.objects.select_related('user').prefetch_related('skills', 'experiences', 'educations').order_by('-id').all()
         
-        return StudentProfile.objects.filter(is_active=True).select_related('user').prefetch_related('skills', 'experiences').order_by('-id')
+        # Allow user to see their own profile even if inactive
+        queryset = StudentProfile.objects.filter(is_active=True).select_related('user').prefetch_related('skills', 'experiences', 'educations').order_by('-id')
+
+        if self.request.user.is_authenticated:
+             # Add the user's own profile to the queryset if it's not already there (e.g. if inactive)
+             # However, simple union or OR logic is better
+             return StudentProfile.objects.filter(
+                 Q(is_active=True) | Q(user=self.request.user)
+             ).select_related('user').prefetch_related('skills', 'experiences', 'educations').order_by('-id').distinct()
+
+        return queryset
 
     @action(detail=False, methods=['get', 'put', 'patch'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
@@ -65,7 +76,8 @@ class StudentViewSet(viewsets.ModelViewSet):
         # Cek apakah user sudah punya profil sebelumnya untuk mencegah error 500
         if hasattr(self.request.user, 'profile'):
             raise ValidationError({"detail": "User ini sudah memiliki profile mahasiswa."})
-        serializer.save(user=self.request.user)
+        # Set is_active=True by default for new profiles
+        serializer.save(user=self.request.user, is_active=True)
 
 class SkillViewSet(viewsets.ModelViewSet):
     serializer_class = SkillSerializer
@@ -94,3 +106,16 @@ class ExperienceViewSet(viewsets.ModelViewSet):
             serializer.save(student=self.request.user.profile)
         except StudentProfile.DoesNotExist:
             raise ValidationError({"detail": "Harap simpan Biodata Diri terlebih dahulu sebelum menambah Pengalaman."})
+
+class EducationViewSet(viewsets.ModelViewSet):
+    serializer_class = EducationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Education.objects.filter(student__user=self.request.user)
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(student=self.request.user.profile)
+        except StudentProfile.DoesNotExist:
+            raise ValidationError({"detail": "Harap simpan Biodata Diri terlebih dahulu sebelum menambah Riwayat Pendidikan."})

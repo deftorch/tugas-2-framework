@@ -127,7 +127,7 @@ export default function AboutForm({ handleLogout }) {
                         onClick={nextStep}
                         className="flex items-center gap-2 bg-[#2596be] hover:bg-[#1e7a9a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
                     >
-                        Next to Skills
+                        Next to Finish
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"

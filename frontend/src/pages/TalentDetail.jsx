@@ -6,8 +6,25 @@ export default function TalentDetail() {
   const { id } = useParams(); 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
+    // Fetch user info to check if owner
+    const checkOwner = async () => {
+        try {
+            const userRes = await api.get("/api/users/me/");
+            // Use API to get profile ID for this user
+            const profileRes = await api.get("/api/students/me/");
+            if (profileRes.data.id == id) {
+                setIsOwner(true);
+            }
+        } catch (e) {
+            // Not logged in or no profile, not owner
+            setIsOwner(false);
+        }
+    };
+    checkOwner();
+
     api
       .get(`/api/students/${id}/`)
       .then((res) => {
@@ -27,10 +44,15 @@ export default function TalentDetail() {
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
       <div className="bg-white shadow p-4 mb-8">
-        <div className="container mx-auto">
+        <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="text-blue-600 font-semibold hover:underline">
             ← Kembali ke Home
           </Link>
+          {isOwner && (
+              <Link to="/mahasiswa" className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-medium">
+                  ✎ Edit Profil
+              </Link>
+          )}
         </div>
       </div>
 
@@ -60,10 +82,18 @@ export default function TalentDetail() {
               {student.bio || "Belum ada deskripsi diri."}
             </p>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm text-gray-600">
+                {student.phone && <div><strong>Phone:</strong> {student.phone}</div>}
+                {student.city && <div><strong>City:</strong> {student.city}</div>}
+                {student.nationality && <div><strong>Nationality:</strong> {student.nationality}</div>}
+                {student.visa_status && <div><strong>Visa:</strong> {student.visa_status}</div>}
+                {student.marital_status && <div><strong>Status:</strong> {student.marital_status}</div>}
+            </div>
+
             <div className="flex gap-3">
-              {student.email && (
+              {(student.email || student.login_email) && (
                 <a
-                  href={`mailto:${student.email}`}
+                  href={`mailto:${student.email || student.login_email}`}
                   className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
                 >
                   Kirim Email
@@ -115,6 +145,7 @@ export default function TalentDetail() {
                   <div>
                     <h3 className="font-bold text-lg">{exp.title}</h3>
                     <p className="text-gray-700">{exp.company}</p>
+                    <p className="text-gray-600 mt-1">{exp.description}</p>
                   </div>
                   <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded mt-2 sm:mt-0 inline-block">
                     {exp.start_date} — {exp.end_date || "Sekarang"}
@@ -123,6 +154,33 @@ export default function TalentDetail() {
               ))}
             {(!student.experiences || student.experiences.length === 0) && (
               <p className="text-gray-500">Belum ada data pengalaman.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Education Section */}
+        <div className="mt-8 bg-white p-8 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold border-b pb-2 mb-4">Pendidikan</h2>
+          <div className="space-y-6">
+            {student.educations &&
+              student.educations.map((edu) => (
+                <div
+                  key={edu.id}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-start"
+                >
+                  <div>
+                    <h3 className="font-bold text-lg">{edu.school}</h3>
+                    <p className="text-gray-700">{edu.degree}</p>
+                     {edu.city && <p className="text-gray-500 text-sm">{edu.city}</p>}
+                    <p className="text-gray-600 mt-1">{edu.description}</p>
+                  </div>
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded mt-2 sm:mt-0 inline-block">
+                    {edu.start_date} — {edu.end_date || "Sekarang"}
+                  </span>
+                </div>
+              ))}
+            {(!student.educations || student.educations.length === 0) && (
+              <p className="text-gray-500">Belum ada data pendidikan.</p>
             )}
           </div>
         </div>
